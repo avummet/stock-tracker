@@ -1,17 +1,112 @@
 package server
 
 import (
-	"log"
+	"encoding/json"
+    stdLib "log"
 	"net/http"
+    "fmt"
+    "time"
+    "github.com/julienschmidt/httprouter"
+    "github.com/sirupsen/logrus"
 )
 
+var (
+    log = logrus.WithField("component", "server")
+)
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-    w.Write([]byte("<h1>Welcome to my web server!</h1>"))
+type Server struct {
+    Log  *logrus.Logger
+    HttpServer *http.Server
 }
 
-func ServeHttp() {
-    mux := http.NewServeMux()
-    mux.HandleFunc("/", indexHandler)
-    log.Fatal(http.ListenAndServe(":8080", mux))
+type ResponseBody struct {
+    Symbol string `json:"symbol"`
+    Day string `json: "date as text"`
+    Open int `json: "Open"`
+    High int `json:"High"`
+    Low int `json:Low"`
+    Close int `json:"close"`
+    Avgprice int `json:"average price"`
+}
+type ServerConfig struct {
+    Port int
+    BindAddress string
+}
+func RunHTTPServer () {
+    httpServer, err := New(ServerConfig)
+    if err != nil {
+        log.Error(err)
+    }
+    err = httpServer.ListenAndServe()
+    if err != nil {
+        log.Error(err)
+    }
+}
+
+func New(config config.ServerConfig) (*Server, error) {
+    s := &Server{
+        Log: logrus.New()
+    }
+
+    server := &http.Server{
+        ReadTimeout: 5 * time.Second,
+        WriteTimeout: 10 * time.Second,
+        IdleTimeout: 120 * time.Second,
+        Addr: fmt.Sprintf("%s:%d", config.BindAddress, config.Port),
+        Handler: s.GetRouter(),
+    }
+    s.HttpServer = server
+    return s, nil
+}
+
+func (s *Server) GetRouter() http.Handler {
+    router := httprouter.New()
+    router.NotFound = http.HandlerFunc(NotFound)
+    router.GET("/v1/", s.Index)
+    router.GET("/v1/stocker", s.Stocker)
+    return router
+
+}
+
+func (s *Server) ListenAndServe() error {
+    w := log.Logger.Writer()
+    s.HttpServer.ErrorLog = stdLibLog.New(w, ", 0")
+    err := s.HttpServer.ListenAndServe()
+    if err != nil && err != http.ErrServerClosed {
+        log.WithError(err).Error("error from server")
+        panic(err)
+    }
+    return err
+}
+
+func (s *Server) Stocker (w http.ResponseWriter, r *http.Request, ps httprouter.params) {
+    var log = log.WithField("func", "Stocker")
+    enc := json.NewEncoder(w)
+    response := struct {
+        Symbol string
+        Day string
+        Open float32 
+        High float32
+        Low float32
+        Close float32
+        Avgprice float32
+    }{
+        Symbol: "MSFT",
+        Day: "2022-10-07",
+        Open: 240.9020,
+        High: 241.3200,
+        Low: 233.1700,
+        Close: 234.2400,
+        Avgprice: 236.2433,
+    }
+
+    err := enc.Encode(response)
+    if err != nil{
+        log.Error(err)
+    }
+}
+
+func NotFound( w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusNotFound)
+    fmt.Fprint(w, "The requested route does not exist. \n")
 }
