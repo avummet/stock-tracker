@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stock-tracker
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stock-tracker
+      state: serving
+
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: rollingUpdate
+
+  template:
+    metadata:
+      labels:
+        app: stock-tracker
+        build: <latest-image-build>
+        state: serving
+      spec:
+        serviceAccountName: stock-tracker
+        automountServiceAccountToken: true
+        volumes:
+          - name: stock-tracker-config
+            configMap:
+              name: stock-tracker-config
+        containers:
+          - image: "build-tag"
+            name: stock-tracker
+            imagePullPolicy: IfNotPresent
+            resources:
+              requests:
+                cpu: "200m"
+                memory: "50Mi"
+              limits:
+                cpu: "1"
+                memory: "100Mi"
+            volumeMounts:
+              -name: stock-tracker
+               mountPath: /configmaps/config
