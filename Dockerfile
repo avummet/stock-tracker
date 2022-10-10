@@ -1,27 +1,17 @@
 FROM golang:1.19
-
-ENV UID=10000
-ENV GID=10000
-
-RUN addgroup \
-    --g "$GID" \
-    "$USER"
+WORKDIR $GOPATH/src/github.com/avummet/stock-tracker
 
 
-RUN adduser \
-    --disabled-password \
-    --gecos ""\
-    --home "$(pwd)" \
-    --ingroup "$USER" \
-    --no-create-home \
-    --uid "$UID" \
-    "$USER"
+COPY .  .
 
+# Download all the dependencies
+RUN go get -d -v ./...
 
-COPY --chown=10000:10000 stock-tracker /
+# Install the package
+RUN go install -v ./...
 
 EXPOSE 7443
 
-USER "$UID"
+#USER "$UID"
 
-ENTRYPOINT["/stock-tracker"]
+CMD ["stock-tracker"]

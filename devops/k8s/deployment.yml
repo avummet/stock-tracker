@@ -20,7 +20,7 @@ spec:
     metadata:
       labels:
         app: stock-tracker
-        build: <latest-image-build>
+        build: "stock-tracker:v1"
         state: serving
       spec:
         serviceAccountName: stock-tracker
@@ -30,7 +30,7 @@ spec:
             configMap:
               name: stock-tracker-config
         containers:
-          - image: "build-tag"
+          - image: "stock-tracker:v1"
             name: stock-tracker
             imagePullPolicy: IfNotPresent
             resources:
