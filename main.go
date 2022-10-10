@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/avummet/stock-tracker/requester"
-    "github.com/avummet/stock-tracker/server"
-	"fmt"
-	"os"
 	"github.com/avummet/stock-tracker/helper"
+	"github.com/avummet/stock-tracker/requester"
+	"github.com/avummet/stock-tracker/server"
+	"github.com/avummet/stock-tracker/config"
+
 )
 
 const (
@@ -14,17 +14,24 @@ const (
 
 func main(){
 	// get env vars
-	ticker := os.Getenv(SYMBOL)
-	ndays := os.Getenv(NDAYS)
+	cfg, err := config.InitConfig(appName)
+	if err != nil {
+		panic(err)
+	}
 
 	//make request to api and get stock data
-	resp := requester.MakeRequest(ticker, ndays)
+	requester.MakeRequest(cfg.Ticker, cfg.Numdays)
 
-	//
-	data := helper.
+	// Parse data struct to extract NUmdays of prices and calc avg.price
+	helper.Parsestruct()
 
-	// webservice
-	server.RunHTTPServer()
+	// webservice to expose resultset
+	serverConfig, err:= config.InitServerConfig(cfg)
+
+	if err != nil {
+		panic(err)
+	}
+	server.RunHTTPServer(serverConfig)
 	
 
 }

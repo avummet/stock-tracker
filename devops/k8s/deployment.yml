@@ -41,5 +41,5 @@ spec:
                 cpu: "1"
                 memory: "100Mi"
             volumeMounts:
-              -name: stock-tracker
+              -name: stock-tracker-config
                mountPath: /configmaps/config
