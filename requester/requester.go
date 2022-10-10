@@ -724,7 +724,7 @@ type StockPicker struct {
 	} `json:"Time Series (Daily)"`
 }
 
-func MakeRequest(symbl string) (data StockPicker) {
+func MakeRequest(symbl string, ndays int) (data StockPicker) {
 	log.SetLevel(log.DebugLevel)
 	req, _ := http.NewRequest("GET", "https://www.alphavantage.co/query?", nil)
 
